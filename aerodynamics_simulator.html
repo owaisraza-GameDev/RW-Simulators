@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FlowLab | Aerodynamics Simulator</title>
+  <style>
+    :root {
+      --bg: #10151b;
+      --panel: #18212a;
+      --panel-2: #202c36;
+      --line: #344552;
+      --text: #e8f0f4;
+      --muted: #93a6b2;
+      --accent: #39c6b4;
+      --accent-2: #ffbd59;
+      --danger: #ff6b6b;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.4 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button, input, select { font: inherit; }
+
+    .app {
+      display: grid;
+      grid-template-columns: 320px minmax(0, 1fr);
+      height: 100vh;
+    }
+
+    aside {
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      padding: 22px 20px;
+      overflow: auto;
+      background:
+        radial-gradient(circle at 0 0, rgba(57, 198, 180, .13), transparent 34%),
+        var(--panel);
+      border-right: 1px solid var(--line);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding-bottom: 17px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      color: #06231f;
+      font-size: 20px;
+      font-weight: 900;
+      border-radius: 10px;
+      background: var(--accent);
+      box-shadow: 0 0 28px rgba(57, 198, 180, .3);
+    }
+
+    h1, h2, p { margin: 0; }
+    h1 { font-size: 18px; letter-spacing: -.03em; }
+    .eyebrow {
+      color: var(--accent);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    .section {
+      display: grid;
+      gap: 11px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+
+    .control {
+      display: grid;
+      gap: 6px;
+    }
+
+    .control-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+    }
+
+    label { color: #c3d0d6; }
+    output { color: var(--accent-2); font-variant-numeric: tabular-nums; }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    select, .button {
+      width: 100%;
+      padding: 9px 10px;
+      color: var(--text);
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      outline: 0;
+    }
+
+    select:focus, .button:focus-visible {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(57, 198, 180, .15);
+    }
+
+    .button {
+      cursor: pointer;
+      font-weight: 700;
+      transition: .15s ease;
+    }
+
+    .button:hover { border-color: var(--accent); }
+    .button.primary {
+      color: #06231f;
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .button.danger { color: #ffd1d1; }
+    .button-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 4px 0;
+      color: #c3d0d6;
+      cursor: pointer;
+    }
+
+    .check input { accent-color: var(--accent); }
+
+    .help {
+      margin-top: auto;
+      padding-top: 14px;
+      color: var(--muted);
+      font-size: 12px;
+      border-top: 1px solid var(--line);
+    }
+
+    main {
+      position: relative;
+      min-width: 0;
+      background: #0d1217;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+    }
+
+    .hud {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      pointer-events: none;
+    }
+
+    .badge {
+      padding: 7px 10px;
+      color: #b9cbd2;
+      background: rgba(24, 33, 42, .84);
+      border: 1px solid rgba(91, 117, 130, .45);
+      border-radius: 5px;
+      backdrop-filter: blur(8px);
+    }
+
+    .badge strong { color: var(--text); }
+
+    .legend {
+      position: absolute;
+      right: 20px;
+      bottom: 20px;
+      display: grid;
+      gap: 7px;
+      min-width: 175px;
+      padding: 12px;
+      background: rgba(24, 33, 42, .9);
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      pointer-events: none;
+    }
+
+    .legend-bar {
+      height: 8px;
+      border-radius: 2px;
+      background: linear-gradient(90deg, #2649bd, #23b6d1, #61d26f, #ffd348, #e64d40);
+    }
+
+    .legend-labels {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .hint {
+      position: absolute;
+      right: 20px;
+      top: 20px;
+      max-width: 260px;
+      padding: 9px 12px;
+      color: var(--muted);
+      background: rgba(24, 33, 42, .78);
+      border: 1px solid rgba(91, 117, 130, .35);
+      border-radius: 5px;
+      pointer-events: none;
+    }
+
+    @media (max-width: 760px) {
+      html, body { overflow: auto; }
+      .app { display: block; height: auto; min-height: 100vh; }
+      aside { border-right: 0; border-bottom: 1px solid var(--line); }
+      main { height: 70vh; min-height: 500px; }
+      .help { margin-top: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside>
+      <div class="brand">
+        <div class="brand-mark">∿</div>
+        <div>
+          <div class="eyebrow">Computational Lab</div>
+          <h1>FlowLab Aerodynamics</h1>
+        </div>
+      </div>
+
+      <section class="section">
+        <div class="section-title">Flow Conditions</div>
+
+        <div class="control">
+          <div class="control-row">
+            <label for="speed">Freestream speed</label>
+            <output id="speedOut">1.00</output>
+          </div>
+          <input id="speed" type="range" min=".15" max="3" step=".05" value="1">
+        </div>
+
+        <div class="control">
+          <div class="control-row">
+            <label for="angle">Flow angle</label>
+            <output id="angleOut">0°</output>
+          </div>
+          <input id="angle" type="range" min="-25" max="25" step="1" value="0">
+        </div>
+
+        <div class="control">
+          <div class="control-row">
+            <label for="viscosity">Viscosity</label>
+            <output id="viscosityOut">0.35</output>
+          </div>
+          <input id="viscosity" type="range" min="0" max="1" step=".01" value=".35">
+        </div>
+
+        <div class="control">
+          <div class="control-row">
+            <label for="density">Air density</label>
+            <output id="densityOut">1.225</output>
+          </div>
+          <input id="density" type="range" min=".5" max="2" step=".025" value="1.225">
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-title">Visualization</div>
+        <label class="check"><input id="showParticles" type="checkbox" checked> Particle flow</label>
+        <label class="check"><input id="showVectors" type="checkbox" checked> Velocity vectors</label>
+        <label class="check"><input id="showPressure" type="checkbox" checked> Pressure field</label>
+        <label class="check"><input id="showGrid" type="checkbox" checked> Reference grid</label>
+      </section>
+
+      <section class="section">
+        <div class="section-title">Simulation</div>
+        <div class="control">
+          <label for="obstacleType">New obstacle shape</label>
+          <select id="obstacleType">
+            <option value="airfoil">Airfoil</option>
+            <option value="circle">Cylinder</option>
+            <option value="block">Block</option>
+          </select>
+        </div>
+        <div class="button-grid">
+          <button class="button primary" id="addObstacle">Add obstacle</button>
+          <button class="button" id="pause">Pause</button>
+        </div>
+        <button class="button danger" id="clearObstacles">Clear obstacles</button>
+        <button class="button" id="reset">Reset simulation</button>
+      </section>
+
+      <div class="help">
+        Drag obstacles to reposition them. Use the mouse wheel over a selected obstacle to rotate or resize it.
+        Double-click empty space to add the selected shape.
+      </div>
+    </aside>
+
+    <main>
+      <canvas id="sim"></canvas>
+      <div class="hud">
+        <div class="badge">Reynolds <strong id="reynolds">—</strong></div>
+        <div class="badge">Max velocity <strong id="maxVelocity">—</strong></div>
+        <div class="badge">Particles <strong id="particleCount">—</strong></div>
+      </div>
+      <div class="hint">Drag shapes · wheel to rotate · double-click to add</div>
+      <div class="legend">
+        <div class="section-title">Static pressure coefficient</div>
+        <div class="legend-bar"></div>
+        <div class="legend-labels"><span>low</span><span>neutral</span><span>high</span></div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const canvas = document.querySelector("#sim");
+      const ctx = canvas.getContext("2d");
+      const $ = id => document.getElementById(id);
+
+      const state = {
+        speed: 1,
+        angle: 0,
+        viscosity: .35,
+        density: 1.225,
+        paused: false,
+        dpr: 1,
+        width: 0,
+        height: 0,
+        obstacles: [],
+        particles: [],
+        selected: null,
+        dragging: false,
+        dragOffset: { x: 0, y: 0 },
+        time: 0
+      };
+
+      const colors = {
+        bg: "#0d1217",
+        grid: "rgba(138, 171, 185, .09)",
+        obstacle: "#dce9ed",
+        obstacleEdge: "#75a0aa",
+        particle: "#8de7dc"
+      };
+
+      function resize() {
+        const rect = canvas.getBoundingClientRect();
+        state.dpr = Math.min(devicePixelRatio || 1, 2);
+        state.width = rect.width;
+        state.height = rect.height;
+        canvas.width = rect.width * state.dpr;
+        canvas.height = rect.height * state.dpr;
+        ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+        seedParticles();
+      }
+
+      function rand(a, b) { return a + Math.random() * (b - a); }
+      function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+      function distance(a, b, c, d) { return Math.hypot(a - c, b - d); }
+
+      function makeObstacle(type, x, y) {
+        return {
+          type,
+          x,
+          y,
+          width: type === "block" ? 110 : type === "airfoil" ? 150 : 74,
+          height: type === "block" ? 58 : type === "airfoil" ? 48 : 74,
+          rotation: type === "airfoil" ? 0 : rand(-.2, .2)
+        };
+      }
+
+      function resetObstacles() {
+        state.obstacles = [
+          makeObstacle("airfoil", state.width * .48, state.height * .48),
+          makeObstacle("circle", state.width * .7, state.height * .58)
+        ];
+        state.obstacles[0].rotation = -.04;
+        state.obstacles[1].width = state.obstacles[1].height = 62;
+        state.selected = null;
+      }
+
+      function seedParticles() {
+        const count = Math.round(clamp(state.width * state.height / 900, 550, 1500));
+        state.particles = Array.from({ length: count }, () => ({
+          x: rand(-40, state.width + 40),
+          y: rand(34, state.height - 10),
+          age: rand(0, 200),
+          life: rand(80, 230),
+          size: rand(.7, 1.8)
+        }));
+      }
+
+      function flowVector(x, y) {
+        const a = state.angle * Math.PI / 180;
+        let vx = Math.cos(a) * state.speed;
+        let vy = Math.sin(a) * state.speed;
+        let pressure = 0;
+
+        for (const o of state.obstacles) {
+          const dx = x - o.x;
+          const dy = y - o.y;
+          const ca = Math.cos(o.rotation), sa = Math.sin(o.rotation);
+          const lx = dx * ca + dy * sa;
+          const ly = -dx * sa + dy * ca;
+          const rx = o.width / 2, ry = o.height / 2;
+          const q = Math.sqrt((lx / rx) ** 2 + (ly / ry) ** 2);
+          const influence = Math.exp(-Math.max(0, q - 1) * 1.65) * Math.exp(-Math.abs(q - 1) * 1.1);
+
+          if (q < 1.25) {
+            const nx = lx / (rx * rx);
+            const ny = ly / (ry * ry);
+            const nl = Math.hypot(nx, ny) || 1;
+            const worldNx = (nx * ca - ny * sa) / nl;
+            const worldNy = (nx * sa + ny * ca) / nl;
+            const dot = vx * worldNx + vy * worldNy;
+            vx -= dot * worldNx * (1.4 + influence * 1.2);
+            vy -= dot * worldNy * (1.4 + influence * 1.2);
+          }
+
+          const tangentX = -dy / (Math.hypot(dx, dy) || 1);
+          const tangentY = dx / (Math.hypot(dx, dy) || 1);
+          const deflection = influence * state.speed * .9;
+          vx += tangentX * deflection * Math.sign(dy || 1);
+          vy += tangentY * deflection * Math.sign(dx || 1);
+          pressure += influence * (1.1 - Math.min(1, q)) - influence * .4;
+        }
+
+        const edge = Math.min(y, state.height - y);
+        vy += Math.sin(state.time * .8 + x * .008) * .008 * state.viscosity;
+        if (edge < 28) vy += (state.height / 2 - y) * .002 * state.viscosity;
+
+        return { x: vx, y: vy, pressure };
+      }
+
+      function insideObstacle(x, y) {
+        return state.obstacles.some(o => {
+          const ca = Math.cos(o.rotation), sa = Math.sin(o.rotation);
+          const dx = x - o.x, dy = y - o.y;
+          const lx = dx * ca + dy * sa, ly = -dx * sa + dy * ca;
+          return (lx / (o.width / 2)) ** 2 + (ly / (o.height / 2)) ** 2 < 1;
+        });
+      }
+
+      function update(dt) {
+        if (state.paused) return;
+        state.time += dt;
+        for (const p of state.particles) {
+          const v = flowVector(p.x, p.y);
+          p.x += v.x * 55 * dt;
+          p.y += v.y * 55 * dt;
+          p.age += dt * 60;
+
+          if (insideObstacle(p.x, p.y) || p.x > state.width + 25 || p.y < -25 ||
+              p.y > state.height + 25 || p.age > p.life) {
+            p.x = -rand(5, 90);
+            p.y = rand(36, state.height - 15);
+            p.age = 0;
+            p.life = rand(80, 230);
+          }
+        }
+      }
+
+      function pressureColor(p) {
+        const t = clamp((p + .65) / 1.5, 0, 1);
+        const stops = [[38,73,189],[35,182,209],[97,210,111],[255,211,72],[230,77,64]];
+        const n = (stops.length - 1) * t;
+        const i = Math.min(stops.length - 2, Math.floor(n));
+        const f = n - i;
+        const a = stops[i], b = stops[i + 1];
+        return `rgb(${a[0] + (b[0] - a[0]) * f},${a[1] + (b[1] - a[1]) * f},${a[2] + (b[2] - a[2]) * f})`;
+      }
+
+      function drawGrid() {
+        if (!$("showGrid").checked) return;
+        ctx.strokeStyle = colors.grid;
+        ctx.lineWidth = 1;
+        for (let x = 0; x < state.width; x += 32) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, state.height); ctx.stroke();
+        }
+        for (let y = 0; y < state.height; y += 32) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(state.width, y); ctx.stroke();
+        }
+        ctx.strokeStyle = "rgba(57,198,180,.22)";
+        ctx.setLineDash([5, 8]);
+        ctx.beginPath(); ctx.moveTo(0, 30); ctx.lineTo(state.width, 30); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+
+      function drawPressure() {
+        if (!$("showPressure").checked) return;
+        const step = 30;
+        for (let y = 40; y < state.height; y += step) {
+          for (let x = 0; x < state.width; x += step) {
+            const v = flowVector(x + step / 2, y + step / 2);
+            ctx.fillStyle = pressureColor(v.pressure);
+            ctx.globalAlpha = .11;
+            ctx.fillRect(x, y, step + 1, step + 1);
+          }
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      function drawVectors() {
+        if (!$("showVectors").checked) return;
+        ctx.strokeStyle = "rgba(191,235,231,.38)";
+        ctx.fillStyle = "rgba(191,235,231,.55)";
+        ctx.lineWidth = 1;
+        for (let y = 70; y < state.height; y += 54) {
+          for (let x = 25; x < state.width; x += 62) {
+            const v = flowVector(x, y);
+            const scale = 13;
+            const ex = x + v.x * scale, ey = y + v.y * scale;
+            ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(ex, ey); ctx.stroke();
+            const ang = Math.atan2(ey - y, ex - x);
+            ctx.beginPath();
+            ctx.moveTo(ex, ey);
+            ctx.lineTo(ex - 4 * Math.cos(ang - .5), ey - 4 * Math.sin(ang - .5));
+            ctx.lineTo(ex - 4 * Math.cos(ang + .5), ey - 4 * Math.sin(ang + .5));
+            ctx.fill();
+          }
+        }
+      }
+
+      function drawParticles() {
+        if (!$("showParticles").checked) return;
+        ctx.fillStyle = colors.particle;
+        for (const p of state.particles) {
+          ctx.globalAlpha = clamp(1 - p.age / p.life, .08, .8);
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      function drawObstacle(o) {
+        ctx.save();
+        ctx.translate(o.x, o.y);
+        ctx.rotate(o.rotation);
+        ctx.fillStyle = colors.obstacle;
+        ctx.strokeStyle = o === state.selected ? "#ffbd59" : colors.obstacleEdge;
+        ctx.lineWidth = o === state.selected ? 3 : 1.5;
+        ctx.shadowColor = "rgba(0,0,0,.35)";
+        ctx.shadowBlur = 15;
+
+        ctx.beginPath();
+        if (o.type === "circle") {
+          ctx.arc(0, 0, o.width / 2, 0, Math.PI * 2);
+        } else if (o.type === "airfoil") {
+          ctx.moveTo(-o.width / 2, 0);
+          ctx.bezierCurveTo(-o.width * .12, -o.height * .55, o.width * .3, -o.height * .38, o.width / 2, 0);
+          ctx.bezierCurveTo(o.width * .22, o.height * .2, -o.width * .28, o.height * .24, -o.width / 2, 0);
+        } else {
+          ctx.roundRect(-o.width / 2, -o.height / 2, o.width, o.height, 5);
+        }
+        ctx.fill(); ctx.stroke();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = "rgba(57,198,180,.48)";
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(-o.width * .55, 0); ctx.lineTo(o.width * .55, 0); ctx.stroke();
+        ctx.restore();
+      }
+
+      function render() {
+        ctx.clearRect(0, 0, state.width, state.height);
+        ctx.fillStyle = colors.bg;
+        ctx.fillRect(0, 0, state.width, state.height);
+        drawGrid();
+        drawPressure();
+        drawVectors();
+        drawParticles();
+        state.obstacles.forEach(drawObstacle);
+
+        const maxV = state.speed * (1.2 + state.obstacles.length * .35);
+        $("maxVelocity").textContent = `${maxV.toFixed(2)} m/s`;
+        $("reynolds").textContent = Math.round(state.density * state.speed * 100 / Math.max(.05, state.viscosity));
+        $("particleCount").textContent = state.particles.length.toLocaleString();
+      }
+
+      function pointerPosition(e) {
+        const r = canvas.getBoundingClientRect();
+        return { x: e.clientX - r.left, y: e.clientY - r.top };
+      }
+
+      function hitObstacle(x, y) {
+        for (let i = state.obstacles.length - 1; i >= 0; i--) {
+          const o = state.obstacles[i];
+          const ca = Math.cos(o.rotation), sa = Math.sin(o.rotation);
+          const dx = x - o.x, dy = y - o.y;
+          const lx = dx * ca + dy * sa, ly = -dx * sa + dy * ca;
+          if ((lx / (o.width / 2)) ** 2 + (ly / (o.height / 2)) ** 2 < 1.2) return o;
+        }
+        return null;
+      }
+
+      canvas.addEventListener("pointerdown", e => {
+        const p = pointerPosition(e);
+        state.selected = hitObstacle(p.x, p.y);
+        if (state.selected) {
+          state.dragging = true;
+          state.dragOffset.x = p.x - state.selected.x;
+          state.dragOffset.y = p.y - state.selected.y;
+          canvas.setPointerCapture(e.pointerId);
+        }
+      });
+
+      canvas.addEventListener("pointermove", e => {
+        if (!state.dragging || !state.selected) return;
+        const p = pointerPosition(e);
+        state.selected.x = clamp(p.x - state.dragOffset.x, 20, state.width - 20);
+        state.selected.y = clamp(p.y - state.dragOffset.y, 35, state.height - 20);
+      });
+
+      canvas.addEventListener("pointerup", () => {
+        state.dragging = false;
+      });
+
+      canvas.addEventListener("wheel", e => {
+        const o = hitObstacle(...Object.values(pointerPosition(e)));
+        if (!o) return;
+        e.preventDefault();
+        if (o.type === "circle") {
+          o.width = o.height = clamp(o.width - e.deltaY * .08, 25, 180);
+        } else {
+          o.rotation += e.deltaY * .003;
+        }
+      }, { passive: false });
+
+      canvas.addEventListener("dblclick", e => {
+        const p = pointerPosition(e);
+        state.obstacles.push(makeObstacle($("obstacleType").value, p.x, p.y));
+      });
+
+      function bindRange(id, output, format = v => v) {
+        $(id).addEventListener("input", e => {
+          state[id] = Number(e.target.value);
+          $(output).textContent = format(state[id]);
+        });
+      }
+
+      bindRange("speed", "speedOut", v => v.toFixed(2));
+      bindRange("angle", "angleOut", v => `${v}°`);
+      bindRange("viscosity", "viscosityOut", v => v.toFixed(2));
+      bindRange("density", "densityOut", v => v.toFixed(3));
+
+      $("addObstacle").addEventListener("click", () => {
+        state.obstacles.push(makeObstacle(
+          $("obstacleType").value,
+          state.width * .5 + rand(-70, 70),
+          state.height * .5 + rand(-80, 80)
+        ));
+      });
+
+      $("clearObstacles").addEventListener("click", () => {
+        state.obstacles = [];
+        state.selected = null;
+      });
+
+      $("reset").addEventListener("click", () => {
+        resetObstacles();
+        seedParticles();
+      });
+
+      $("pause").addEventListener("click", e => {
+        state.paused = !state.paused;
+        e.currentTarget.textContent = state.paused ? "Resume" : "Pause";
+      });
+
+      window.addEventListener("resize", resize);
+
+      let last = performance.now();
+      function frame(now) {
+        const dt = Math.min(.04, (now - last) / 1000);
+        last = now;
+        update(dt);
+        render();
+        requestAnimationFrame(frame);
+      }
+
+      resize();
+      resetObstacles();
+      requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>
