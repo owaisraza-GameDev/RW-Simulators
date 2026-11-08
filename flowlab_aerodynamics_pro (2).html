@@ -1,0 +1,1482 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FlowLab Aerodynamics Pro | CFD & Aerodynamics Simulator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    
+    :root {
+      --bg: #070a0e;
+      --panel: #0e151d;
+      --panel-2: #16202c;
+      --panel-3: #1f2d3d;
+      --line: #27384a;
+      --text: #eaeff5;
+      --muted: #8096ab;
+      --accent: #39c6b4;
+      --accent-glow: rgba(57, 198, 180, 0.35);
+      --accent-2: #ffbd59;
+      --danger: #ff5555;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+      user-select: none;
+    }
+
+    button, input, select { font: inherit; }
+
+    aside::-webkit-scrollbar { width: 6px; }
+    aside::-webkit-scrollbar-track { background: var(--panel); }
+    aside::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+    aside::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+    .app-layout {
+      display: grid;
+      grid-template-columns: 340px minmax(0, 1fr);
+      height: 100vh;
+    }
+
+    aside {
+      z-index: 3;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding: 18px;
+      overflow-y: auto;
+      background:
+        radial-gradient(circle at 0 0, rgba(57, 198, 180, .14), transparent 45%),
+        var(--panel);
+      border-right: 1px solid var(--line);
+    }
+
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      color: #041815;
+      font-size: 20px;
+      font-weight: 900;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), #209988);
+      box-shadow: 0 0 18px var(--accent-glow);
+    }
+
+    .section-card {
+      display: grid;
+      gap: 10px;
+      background: rgba(22, 32, 44, 0.45);
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(39, 56, 74, 0.55);
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .control-group {
+      display: grid;
+      gap: 4px;
+    }
+
+    .control-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    label { color: #c3d0d6; font-size: 12px; }
+    output { color: var(--accent-2); font-variant-numeric: tabular-nums; font-weight: 700; font-size: 12px; }
+
+    input[type="range"] {
+      width: 100%;
+      height: 5px;
+      background: var(--panel-3);
+      border-radius: 3px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    select, .btn {
+      width: 100%;
+      padding: 7px 10px;
+      color: var(--text);
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      outline: 0;
+      font-size: 12px;
+    }
+
+    select:focus, .btn:focus-visible {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(57, 198, 180, .2);
+    }
+
+    .btn {
+      cursor: pointer;
+      font-weight: 700;
+      transition: all .15s ease;
+      text-align: center;
+    }
+
+    .btn:hover { border-color: var(--accent); background: var(--panel-3); }
+    .btn-primary {
+      color: #041815;
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+    .btn-primary:hover {
+      background: #4ae0cd;
+      box-shadow: 0 0 14px var(--accent-glow);
+    }
+
+    .btn-danger { color: #ff9999; border-color: rgba(255, 85, 85, 0.4); }
+    .btn-danger:hover { background: rgba(255, 85, 85, 0.15); border-color: var(--danger); }
+
+    .check-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 10px;
+    }
+
+    .check-label {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: #c3d0d6;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .check-label input { accent-color: var(--accent); cursor: pointer; }
+
+    main {
+      position: relative;
+      min-width: 0;
+      background: #070a0e;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: crosshair;
+    }
+
+    .hud-bar {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      pointer-events: none;
+      max-width: calc(100% - 28px);
+    }
+
+    .hud-badge {
+      padding: 5px 10px;
+      color: #b0c4de;
+      background: rgba(14, 21, 29, 0.88);
+      border: 1px solid rgba(39, 56, 74, 0.8);
+      border-radius: 6px;
+      backdrop-filter: blur(10px);
+      font-size: 11px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+    }
+
+    .hud-badge strong { color: var(--accent-2); font-weight: 700; }
+
+    .legend-box {
+      position: absolute;
+      right: 14px;
+      bottom: 14px;
+      display: grid;
+      gap: 6px;
+      min-width: 210px;
+      padding: 10px 12px;
+      background: rgba(14, 21, 29, 0.92);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      backdrop-filter: blur(10px);
+      pointer-events: none;
+    }
+
+    .legend-gradient {
+      height: 9px;
+      border-radius: 4px;
+      background: linear-gradient(90deg, #1e3a8a, #0284c7, #10b981, #eab308, #ef4444);
+    }
+
+    .legend-text {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: 10px;
+      font-weight: 600;
+    }
+
+    .hint-banner {
+      position: absolute;
+      right: 14px;
+      top: 14px;
+      padding: 6px 12px;
+      color: var(--muted);
+      background: rgba(14, 21, 29, 0.85);
+      border: 1px solid rgba(39, 56, 74, 0.6);
+      border-radius: 6px;
+      backdrop-filter: blur(8px);
+      pointer-events: none;
+      font-size: 11px;
+    }
+
+    .hover-tooltip {
+      position: absolute;
+      padding: 8px 12px;
+      background: rgba(10, 15, 22, 0.95);
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 11px;
+      pointer-events: none;
+      transform: translate(-50%, -125%);
+      display: none;
+      z-index: 10;
+      white-space: nowrap;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    }
+
+    @media (max-width: 860px) {
+      html, body { overflow: auto; }
+      .app-layout { display: block; height: auto; min-height: 100vh; }
+      aside { border-right: 0; border-bottom: 1px solid var(--line); }
+      main { height: 75vh; min-height: 480px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside>
+      <div class="flex items-center gap-3 pb-3 border-b border-[var(--line)]">
+        <div class="brand-mark">∿</div>
+        <div>
+          <div class="text-[10px] font-extrabold text-[var(--accent)] tracking-widest uppercase">High-Precision CFD Suite</div>
+          <h1 class="text-base font-bold tracking-tight text-[var(--text)]">FlowLab Aerodynamics Pro</h1>
+        </div>
+      </div>
+
+      <!-- Scenarios -->
+      <div class="section-card">
+        <div class="section-title">Interactive Scenarios</div>
+        <div class="control-group">
+          <select id="scenarioSelect">
+            <option value="stall">1. Airfoil Stall Dynamics (NACA 4412)</option>
+            <option value="karman">2. Kármán Vortex Street (Cylinder)</option>
+            <option value="venturi">3. Venturi Flow Channel</option>
+            <option value="multielement">4. Multi-Element High-Lift Wing</option>
+            <option value="groundeffect">5. Ground Effect Downforce Wing</option>
+            <option value="dragcompare">6. Aerodynamic Drag Comparison</option>
+            <option value="supersonic">7. Supersonic Double-Wedge Flow</option>
+            <option value="custom">Custom Configuration</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Freestream Controls -->
+      <div class="section-card">
+        <div class="section-title">Freestream Flow Parameters</div>
+
+        <div class="control-group">
+          <div class="control-row">
+            <label for="speed">Velocity (V<sub>∞</sub>)</label>
+            <output id="speedOut">1.80 m/s</output>
+          </div>
+          <input id="speed" type="range" min="0.1" max="4.5" step="0.05" value="1.8">
+        </div>
+
+        <div class="control-group">
+          <div class="control-row">
+            <label for="angle">Angle of Attack (α)</label>
+            <output id="angleOut">0°</output>
+          </div>
+          <input id="angle" type="range" min="-30" max="30" step="1" value="0">
+        </div>
+
+        <div class="control-group">
+          <div class="control-row">
+            <label for="viscosity">Kinematic Viscosity (ν)</label>
+            <output id="viscosityOut">0.15</output>
+          </div>
+          <input id="viscosity" type="range" min="0.01" max="1.0" step="0.01" value="0.15">
+        </div>
+
+        <div class="control-group">
+          <div class="control-row">
+            <label for="density">Air Density (ρ)</label>
+            <output id="densityOut">1.225 kg/m³</output>
+          </div>
+          <input id="density" type="range" min="0.2" max="2.5" step="0.025" value="1.225">
+        </div>
+      </div>
+
+      <!-- Stream Controls -->
+      <div class="section-card">
+        <div class="section-title">Particle Stream Dynamics</div>
+
+        <div class="control-group">
+          <div class="control-row">
+            <label for="particleDensity">Particle Count</label>
+            <output id="particleDensityOut">4500</output>
+          </div>
+          <input id="particleDensity" type="range" min="1000" max="8000" step="250" value="4500">
+        </div>
+
+        <div class="control-group">
+          <div class="control-row">
+            <label for="trailLength">Trail Length</label>
+            <output id="trailLengthOut">16</output>
+          </div>
+          <input id="trailLength" type="range" min="2" max="40" step="1" value="16">
+        </div>
+
+        <div class="control-group">
+          <div class="control-row">
+            <label for="smokeColor">Trail Theme</label>
+            <select id="smokeColor" style="width: 130px; padding: 4px 6px;">
+              <option value="cyan">Electric Cyan</option>
+              <option value="white">Pure White</option>
+              <option value="lime">Neon Lime</option>
+              <option value="crimson">Crimson Red</option>
+              <option value="amber">Sunset Amber</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Visual Layer Toggles -->
+      <div class="section-card">
+        <div class="section-title">Render Layers</div>
+        <div class="check-grid">
+          <label class="check-label"><input id="showParticles" type="checkbox" checked> Particles</label>
+          <label class="check-label"><input id="showSmoke" type="checkbox"> Smoke Lines</label>
+          <label class="check-label"><input id="showVectors" type="checkbox" checked> Vector Field</label>
+          <label class="check-label"><input id="showPressure" type="checkbox" checked> Pressure (C<sub>p</sub>)</label>
+          <label class="check-label"><input id="showVorticity" type="checkbox"> Vorticity (ω)</label>
+          <label class="check-label"><input id="showForces" type="checkbox" checked> Force Vectors</label>
+          <label class="check-label"><input id="showGrid" type="checkbox" checked> Mesh Grid</label>
+          <label class="check-label"><input id="showChords" type="checkbox" checked> Chord Lines</label>
+        </div>
+      </div>
+
+      <!-- Obstacles -->
+      <div class="section-card">
+        <div class="section-title">Obstacle Geometries</div>
+        <div class="control-group">
+          <select id="obstacleType">
+            <option value="naca4412">NACA 4412 Cambered Airfoil</option>
+            <option value="naca0012">NACA 0012 Symmetric Airfoil</option>
+            <option value="racewing">Inverted Race Wing (Downforce)</option>
+            <option value="circle">Circular Cylinder</option>
+            <option value="ellipse">Elliptical Body</option>
+            <option value="block">Blunt Body Block</option>
+            <option value="plate">Flat Airbrake Plate</option>
+            <option value="wedge">Supersonic Double-Wedge</option>
+            <option value="teardrop">Streamlined Teardrop Body</option>
+            <option value="car">Sports Car Silhouette</option>
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <button class="btn btn-primary" id="addObstacle">Spawn Body</button>
+          <button class="btn" id="pause">Pause</button>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <button class="btn btn-danger" id="clearObstacles">Clear Bodies</button>
+          <button class="btn" id="reset">Reset Flow</button>
+        </div>
+      </div>
+
+      <div class="pt-2 text-[11px] text-[var(--muted)] leading-relaxed border-t border-[var(--line)]">
+        • <strong>Drag Bodies</strong>: Reposition anywhere on screen.<br>
+        • <strong>Scroll Wheel</strong>: Rotate selected shape (Hold <em>Shift</em> to scale).<br>
+        • <strong>Double Click</strong>: Spawn selected preset shape under cursor.
+      </div>
+    </aside>
+
+    <main>
+      <canvas id="sim"></canvas>
+      
+      <!-- Telemetry HUD -->
+      <div class="hud-bar">
+        <div class="hud-badge">Reynolds (Re): <strong id="reynolds">—</strong></div>
+        <div class="hud-badge">Mach (M): <strong id="mach">—</strong></div>
+        <div class="hud-badge">Lift (C<sub>L</sub>): <strong id="liftCoeff">—</strong></div>
+        <div class="hud-badge">Drag (C<sub>D</sub>): <strong id="dragCoeff">—</strong></div>
+        <div class="hud-badge">Lift/Drag (L/D): <strong id="ldRatio">—</strong></div>
+        <div class="hud-badge">Max Speed: <strong id="maxVelocity">—</strong></div>
+        <div class="hud-badge">Particles: <strong id="particleCount">—</strong></div>
+      </div>
+
+      <div class="hint-banner">Direct Skin Attachment CFD Flow Solvers</div>
+
+      <!-- Color Legend -->
+      <div class="legend-box">
+        <div class="section-title" id="legendTitle">Static Pressure (C<sub>P</sub>)</div>
+        <div class="legend-gradient" id="legendBar"></div>
+        <div class="legend-text" id="legendLabels"><span>Suction (-)</span><span>Ambient (0)</span><span>Stagnation (+)</span></div>
+      </div>
+
+      <!-- Hover Tooltip -->
+      <div class="hover-tooltip" id="tooltip"></div>
+    </main>
+  </div>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const canvas = document.querySelector("#sim");
+      const ctx = canvas.getContext("2d");
+      const $ = id => document.getElementById(id);
+      const tooltip = $("tooltip");
+
+      // Offscreen canvas for fast continuous fluid heatmaps
+      const offCanvas = document.createElement("canvas");
+      const offCtx = offCanvas.getContext("2d");
+
+      const state = {
+        speed: 1.8,
+        angle: 0, // Freestream Flow Angle of Attack (degrees)
+        viscosity: 0.15,
+        density: 1.225,
+        targetParticles: 4500,
+        trailLength: 16,
+        smokeColor: "cyan",
+        paused: false,
+        dpr: 1,
+        width: 0,
+        height: 0,
+        obstacles: [],
+        particles: [],
+        smokeLines: [],
+        vortices: [],
+        selected: null,
+        hovered: null,
+        dragging: false,
+        dragOffset: { x: 0, y: 0 },
+        time: 0,
+
+        // High resolution smooth heatmap grid settings
+        offScale: 0.2, // 1/5 resolution buffer for ultra smooth bilinear rendering
+        offCols: 0,
+        offRows: 0,
+        fieldVx: null,
+        fieldVy: null,
+        fieldP: null,
+        fieldW: null
+      };
+
+      const smokePalettes = {
+        cyan: { head: "#62f6ff", tail: "#39c6b4" },
+        white: { head: "#ffffff", tail: "#cbd5e1" },
+        lime: { head: "#a3ff12", tail: "#84cc16" },
+        crimson: { head: "#ff4d4d", tail: "#ef4444" },
+        amber: { head: "#ffb830", tail: "#f59e0b" }
+      };
+
+      function rand(a, b) { return a + Math.random() * (b - a); }
+      function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+      function distSq(x1, y1, x2, y2) { return (x1 - x2) ** 2 + (y1 - y2) ** 2; }
+
+      function resize() {
+        const rect = canvas.getBoundingClientRect();
+        state.dpr = Math.min(devicePixelRatio || 1, 2);
+        state.width = rect.width;
+        state.height = rect.height;
+        canvas.width = rect.width * state.dpr;
+        canvas.height = rect.height * state.dpr;
+        ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+
+        offCanvas.width = Math.ceil(rect.width * state.offScale);
+        offCanvas.height = Math.ceil(rect.height * state.offScale);
+        state.offCols = offCanvas.width;
+        state.offRows = offCanvas.height;
+
+        const totalGrid = state.offCols * state.offRows;
+        state.fieldVx = new Float32Array(totalGrid);
+        state.fieldVy = new Float32Array(totalGrid);
+        state.fieldP = new Float32Array(totalGrid);
+        state.fieldW = new Float32Array(totalGrid);
+
+        seedParticles();
+        seedSmokeLines();
+      }
+
+      function makeObstacle(type, x, y, width = null, height = null, rotation = 0) {
+        const defaultSizes = {
+          naca4412: [170, 52],
+          naca0012: [170, 46],
+          racewing: [160, 54],
+          circle: [85, 85],
+          ellipse: [130, 68],
+          block: [100, 70],
+          plate: [18, 110],
+          wedge: [150, 55],
+          teardrop: [165, 60],
+          car: [195, 66]
+        };
+
+        const size = defaultSizes[type] || [120, 60];
+        return {
+          id: Math.random().toString(36).substr(2, 9),
+          type,
+          x,
+          y,
+          width: width || size[0],
+          height: height || size[1],
+          rotation,
+          cl: 0,
+          cd: 0
+        };
+      }
+
+      function seedParticles() {
+        const target = state.targetParticles;
+        if (state.particles.length > target) {
+          state.particles.length = target;
+        } else {
+          while (state.particles.length < target) {
+            state.particles.push({
+              x: rand(-60, state.width),
+              y: rand(0, state.height),
+              history: [],
+              age: rand(0, 300),
+              life: rand(120, 340),
+              speedMult: rand(0.95, 1.05),
+              size: rand(0.9, 1.8)
+            });
+          }
+        }
+      }
+
+      function seedSmokeLines() {
+        const numLines = Math.floor(state.height / 18);
+        state.smokeLines = Array.from({ length: numLines }, (_, i) => ({
+          yStart: (i + 0.5) * 18,
+          points: []
+        }));
+      }
+
+      /**
+       * Get Camber line y_c(t) and thickness y_t(t) in local coordinates
+       * t in [0, 1] where t=0 is leading edge (lx = -rx) and t=1 is trailing edge (lx = +rx)
+       */
+      function getAirfoilProfile(o, t) {
+        const rx = o.width / 2;
+        const ry = o.height / 2;
+        
+        // Thickness distribution
+        const yt = 1.48 * ry * Math.sqrt(Math.max(0, t)) * (1 - t);
+        
+        let yc = 0;
+        if (o.type === "naca4412") {
+          yc = -0.38 * ry * t * (1 - t); // Cambered upward (negative y in screen space)
+        } else if (o.type === "racewing") {
+          yc = 0.45 * ry * t * (1 - t);  // Downforce wing cambered downward
+        }
+        return { yc, yt, yUpper: yc - yt, yLower: yc + yt };
+      }
+
+      /**
+       * MATHEMATICALLY EXACT SIGNED DISTANCE FIELD (SDF) & SURFACE NORMAL SOLVER
+       * Given world point (px, py) and obstacle o:
+       * Transforms (px, py) -> local coordinates (lx, ly)
+       * Returns: distance d (d <= 0 INSIDE skin, d > 0 OUTSIDE skin)
+       * and world unit normal vector (nx, ny) pointing OUTWARD from skin.
+       */
+      function getObstacleSDF(o, px, py) {
+        const dx = px - o.x;
+        const dy = py - o.y;
+        
+        // Exact 2D inverse rotation to local coordinate frame
+        const cosA = Math.cos(-o.rotation);
+        const sinA = Math.sin(-o.rotation);
+        const lx = dx * cosA - dy * sinA;
+        const ly = dx * sinA + dy * cosA;
+
+        const rx = o.width / 2;
+        const ry = o.height / 2;
+
+        let distance = 0;
+        let lNx = 0, lNy = 0; // Local normal vector
+
+        if (o.type === "circle") {
+          const d = Math.hypot(lx, ly);
+          distance = d - rx;
+          lNx = d > 0 ? lx / d : 1;
+          lNy = d > 0 ? ly / d : 0;
+        }
+        else if (o.type === "ellipse") {
+          const q = Math.sqrt((lx / rx) ** 2 + (ly / ry) ** 2);
+          distance = (q - 1) * Math.min(rx, ry);
+          lNx = lx / (rx * rx);
+          lNy = ly / (ry * ry);
+          const len = Math.hypot(lNx, lNy) || 1;
+          lNx /= len; lNy /= len;
+        }
+        else if (o.type === "naca4412" || o.type === "naca0012" || o.type === "racewing") {
+          if (lx < -rx) {
+            // Upstream of leading edge nose
+            const prof = getAirfoilProfile(o, 0);
+            const leDist = Math.hypot(lx + rx, ly - prof.yc);
+            distance = leDist;
+            lNx = (lx + rx) / (leDist || 1);
+            lNy = (ly - prof.yc) / (leDist || 1);
+          } else if (lx > rx) {
+            // Downstream of trailing edge tip
+            const prof = getAirfoilProfile(o, 1);
+            const teDist = Math.hypot(lx - rx, ly - prof.yc);
+            distance = teDist;
+            lNx = (lx - rx) / (teDist || 1);
+            lNy = (ly - prof.yc) / (teDist || 1);
+          } else {
+            // Chord section lx in [-rx, rx]
+            const t = clamp((lx + rx) / (2 * rx), 0, 1);
+            const prof = getAirfoilProfile(o, t);
+
+            const distUpper = prof.yUpper - ly; // Positive if ly < yUpper (above upper skin)
+            const distLower = ly - prof.yLower; // Positive if ly > yLower (below lower skin)
+
+            if (ly >= prof.yUpper && ly <= prof.yLower) {
+              // INSIDE AIRFOIL BODY SKIN!
+              const dUp = ly - prof.yUpper;
+              const dLow = prof.yLower - ly;
+              if (dUp < dLow) {
+                distance = -dUp;
+                lNx = 0; lNy = -1; // Points up to upper skin
+              } else {
+                distance = -dLow;
+                lNx = 0; lNy = 1;  // Points down to lower skin
+              }
+            } else if (ly < prof.yUpper) {
+              // OUTSIDE ABOVE UPPER SKIN
+              distance = prof.yUpper - ly;
+              lNx = 0; lNy = -1;
+            } else {
+              // OUTSIDE BELOW LOWER SKIN
+              distance = ly - prof.yLower;
+              lNx = 0; lNy = 1;
+            }
+          }
+        }
+        else if (o.type === "wedge") {
+          const xN = Math.abs(lx) / rx;
+          const yBound = ry * (1 - clamp(xN, 0, 1));
+          if (Math.abs(lx) <= rx && Math.abs(ly) <= yBound) {
+            distance = -(yBound - Math.abs(ly));
+            lNx = lx >= 0 ? 0.7 : -0.7;
+            lNy = ly >= 0 ? 0.7 : -0.7;
+          } else {
+            distance = Math.abs(ly) - yBound;
+            lNx = lx >= 0 ? 0.7 : -0.7;
+            lNy = ly >= 0 ? 1 : -1;
+          }
+          const len = Math.hypot(lNx, lNy) || 1;
+          lNx /= len; lNy /= len;
+        }
+        else if (o.type === "teardrop") {
+          const t = clamp((lx + rx) / (2 * rx), 0, 1);
+          const yBound = ry * 1.5 * Math.sqrt(t) * (1 - t);
+          if (Math.abs(lx) <= rx && Math.abs(ly) <= yBound) {
+            distance = -(yBound - Math.abs(ly));
+            lNx = lx >= 0 ? 0.3 : -0.9;
+            lNy = ly >= 0 ? 1 : -1;
+          } else {
+            distance = Math.abs(ly) - yBound;
+            lNx = lx >= 0 ? 0.3 : -0.9;
+            lNy = ly >= 0 ? 1 : -1;
+          }
+          const len = Math.hypot(lNx, lNy) || 1;
+          lNx /= len; lNy /= len;
+        }
+        else if (o.type === "car") {
+          // Streamlined silhouette box SDF
+          const qx = Math.abs(lx) - rx;
+          const qy = Math.abs(ly) - ry * 0.75;
+          const outsideDist = Math.hypot(Math.max(qx, 0), Math.max(qy, 0));
+          const insideDist = Math.min(Math.max(qx, qy), 0);
+          distance = outsideDist + insideDist;
+          lNx = qx > qy ? (lx >= 0 ? 1 : -1) : 0;
+          lNy = qy >= qx ? (ly >= 0 ? 1 : -1) : 0;
+        }
+        else {
+          // Block / Airbrake Plate Box SDF
+          const qx = Math.abs(lx) - rx;
+          const qy = Math.abs(ly) - ry;
+          const outsideDist = Math.hypot(Math.max(qx, 0), Math.max(qy, 0));
+          const insideDist = Math.min(Math.max(qx, qy), 0);
+          distance = outsideDist + insideDist;
+          lNx = qx > qy ? (lx >= 0 ? 1 : -1) : 0;
+          lNy = qy >= qx ? (ly >= 0 ? 1 : -1) : 0;
+        }
+
+        // Convert local normal (lNx, lNy) back to world space using o.rotation
+        const worldNx = lNx * Math.cos(o.rotation) - lNy * Math.sin(o.rotation);
+        const worldNy = lNx * Math.sin(o.rotation) + lNy * Math.cos(o.rotation);
+
+        return { distance, nx: worldNx, ny: worldNy, lx, ly };
+      }
+
+      /**
+       * EVALUATE FLOW VELOCITY VECTOR & PRESSURE AT WORLD POINT (x, y)
+       */
+      function evaluateFlow(x, y) {
+        const rad = state.angle * Math.PI / 180;
+        let vx = Math.cos(rad) * state.speed;
+        let vy = Math.sin(rad) * state.speed;
+        let netP = 0;
+        let netW = 0;
+
+        for (const o of state.obstacles) {
+          const sdf = getObstacleSDF(o, x, y);
+          const dist = sdf.distance;
+          const bodyRadius = Math.max(o.width, o.height) / 2;
+
+          if (dist <= 0) {
+            // Point is INSIDE solid body skin -> zero velocity, stagnation pressure
+            return { vx: 0, vy: 0, p: 1.0, w: 0, dist, sdf };
+          }
+
+          // Boundary Layer Surface Attachment Physics
+          const delta = 36; // Boundary layer thickness in pixels
+          if (dist < delta) {
+            // Normal velocity component relative to skin
+            const vDotN = vx * sdf.nx + vy * sdf.ny;
+
+            // Pure tangential velocity along skin surface
+            let tx = vx - vDotN * sdf.nx;
+            let ty = vy - vDotN * sdf.ny;
+
+            // Suction side circulation velocity boost for lifting bodies
+            if (o.type.includes("naca") || o.type === "racewing") {
+              const effAoA = rad - o.rotation;
+              const gamma = Math.PI * o.width * state.speed * Math.sin(effAoA + 0.12);
+              const isSuctionSide = sdf.ly < 0;
+              const circMag = (gamma / (2 * Math.PI * (dist + 10))) * (isSuctionSide ? 1.4 : -0.6) * Math.exp(-dist / 45);
+              
+              tx += circMag * (-sdf.ny);
+              ty += circMag * (sdf.nx);
+            }
+
+            // Transition function from 0 at skin surface (d=0) to 1 at freestream (d=delta)
+            const t = clamp(dist / delta, 0, 1);
+            const s = t * t * (3 - 2 * t); // Smoothstep curve
+
+            // Suppress inward normal velocity (NO PENETRATION!), keep tangential flow
+            const allowedNormal = Math.max(0, vDotN) * s;
+            
+            vx = tx * (1 - s * 0.2) + sdf.nx * allowedNormal;
+            vy = ty * (1 - s * 0.2) + sdf.ny * allowedNormal;
+          } else if (dist < bodyRadius * 2.5) {
+            // Far field smooth deflection
+            const influence = Math.exp(-dist / (bodyRadius * 1.1));
+            const vDotN = vx * sdf.nx + vy * sdf.ny;
+            if (vDotN < 0) {
+              vx -= vDotN * sdf.nx * influence * 1.15;
+              vy -= vDotN * sdf.ny * influence * 1.15;
+            }
+          }
+
+          // Static Pressure Coefficient Cp = 1 - (V/Vinf)^2
+          const speedSq = vx * vx + vy * vy;
+          const vInfSq = state.speed * state.speed || 1;
+          const cp = (vInfSq - speedSq) / vInfSq;
+          const presFalloff = Math.exp(-dist / (bodyRadius * 1.4));
+          netP += cp * presFalloff;
+        }
+
+        // Superimpose dynamic Kármán Wake Vortices
+        for (const v of state.vortices) {
+          const d2 = distSq(x, y, v.x, v.y) + 120;
+          const vCircX = -v.gamma * (y - v.y) / (2 * Math.PI * d2);
+          const vCircY = v.gamma * (x - v.x) / (2 * Math.PI * d2);
+          const falloff = Math.exp(-d2 / 14000);
+          vx += vCircX * falloff * 45;
+          vy += vCircY * falloff * 45;
+          netW += (v.gamma / Math.sqrt(d2)) * falloff;
+        }
+
+        return { vx, vy, p: netP, w: netW, dist: 999 };
+      }
+
+      function updateCFDGrid() {
+        // Vortex Shedding Generator
+        if (!state.paused && state.vortices.length < 100) {
+          const rad = state.angle * Math.PI / 180;
+          for (const o of state.obstacles) {
+            const reynolds = (state.density * state.speed * o.width) / Math.max(0.01, state.viscosity);
+            const effAoA = Math.abs(o.rotation - rad);
+            const isBluff = o.type === "circle" || o.type === "block" || o.type === "plate" || o.type === "ellipse";
+            const isStalled = (o.type.includes("naca") || o.type === "racewing") && effAoA > 0.28;
+
+            if ((isBluff && reynolds > 50) || isStalled) {
+              if (Math.random() < 0.25) {
+                const sign = (Math.floor(state.time * 14) % 2 === 0) ? 1 : -1;
+                const cosA = Math.cos(o.rotation);
+                const sinA = Math.sin(o.rotation);
+                const shedX = o.x + cosA * (o.width * 0.45) - sinA * (sign * o.height * 0.35);
+                const shedY = o.y + sinA * (o.width * 0.45) + cosA * (sign * o.height * 0.35);
+
+                state.vortices.push({
+                  x: shedX,
+                  y: shedY,
+                  gamma: sign * state.speed * (isStalled ? 3.5 : 2.2) * (1 + state.viscosity),
+                  age: 0,
+                  maxAge: rand(3.0, 6.0)
+                });
+              }
+            }
+          }
+        }
+
+        // Advance vortices downstream
+        const dt = 0.016;
+        const rad = state.angle * Math.PI / 180;
+        const VinfX = Math.cos(rad) * state.speed;
+        const VinfY = Math.sin(rad) * state.speed;
+
+        for (let i = state.vortices.length - 1; i >= 0; i--) {
+          const v = state.vortices[i];
+          v.age += dt;
+          v.x += VinfX * 55 * dt;
+          v.y += VinfY * 55 * dt;
+          v.gamma *= (1 - 0.22 * state.viscosity * dt);
+          if (v.age > v.maxAge || v.x > state.width + 80) {
+            state.vortices.splice(i, 1);
+          }
+        }
+
+        // Compute CFD values onto offscreen continuous buffer
+        const step = 1 / state.offScale;
+        for (let r = 0; r < state.offRows; r++) {
+          for (let c = 0; c < state.offCols; c++) {
+            const idx = r * state.offCols + c;
+            const x = c * step;
+            const y = r * step;
+
+            const flow = evaluateFlow(x, y);
+            state.fieldVx[idx] = flow.vx;
+            state.fieldVy[idx] = flow.vy;
+            state.fieldP[idx] = flow.p;
+            state.fieldW[idx] = flow.w;
+          }
+        }
+
+        // Telemetry calculation
+        for (const o of state.obstacles) {
+          const aoa = rad - o.rotation;
+          const isStalled = Math.abs(aoa) > 0.28;
+          let baseCL = 2 * Math.PI * Math.sin(aoa);
+          if (o.type === "naca4412") baseCL += 0.45;
+          if (o.type === "racewing") baseCL -= 0.68;
+          if (isStalled) baseCL *= 0.38;
+
+          let baseCD = 0.03 + (1 - Math.cos(aoa)) * 2.2;
+          if (o.type === "circle") baseCD = 0.48;
+          if (o.type === "block") baseCD = 1.15;
+          if (o.type === "plate") baseCD = 1.35 * Math.abs(Math.sin(aoa)) + 0.12;
+          if (isStalled) baseCD += 0.65;
+
+          o.cl = baseCL;
+          o.cd = baseCD;
+        }
+      }
+
+      function updateParticles(dt) {
+        if (state.paused) return;
+
+        state.time += dt;
+        updateCFDGrid();
+        seedParticles();
+
+        const maxTrail = state.trailLength;
+
+        for (const p of state.particles) {
+          // RK2 Velocity integration step directly from flow field
+          const k1 = evaluateFlow(p.x, p.y);
+          const midX = p.x + k1.vx * 30 * p.speedMult * dt;
+          const midY = p.y + k1.vy * 30 * p.speedMult * dt;
+          const k2 = evaluateFlow(midX, midY);
+
+          p.x += k2.vx * 60 * p.speedMult * dt;
+          p.y += k2.vy * 60 * p.speedMult * dt;
+          p.age += dt * 60;
+
+          // EXACT SKIN CONTACT PROJECTION
+          // If particle enters inside skin surface (d <= 1.2px), project directly onto skin surface d = 1.2px
+          for (const o of state.obstacles) {
+            const sdf = getObstacleSDF(o, p.x, p.y);
+            if (sdf.distance <= 1.2) {
+              const pushDist = 1.2 - sdf.distance;
+              p.x += sdf.nx * pushDist;
+              p.y += sdf.ny * pushDist;
+            }
+          }
+
+          p.history.push({ x: p.x, y: p.y });
+          if (p.history.length > maxTrail) {
+            p.history.shift();
+          }
+
+          if (p.x > state.width + 40 || p.y < -40 || p.y > state.height + 40 || p.age > p.life) {
+            p.x = -rand(10, 80);
+            p.y = rand(0, state.height);
+            p.history = [];
+            p.age = 0;
+            p.life = rand(120, 340);
+          }
+        }
+
+        // Update Smoke Lines
+        if ($("showSmoke").checked) {
+          for (const line of state.smokeLines) {
+            if (!state.paused) {
+              line.points.unshift({ x: 0, y: line.yStart });
+            }
+
+            for (let i = line.points.length - 1; i >= 0; i--) {
+              const pt = line.points[i];
+              const flow = evaluateFlow(pt.x, pt.y);
+              pt.x += flow.vx * 60 * dt;
+              pt.y += flow.vy * 60 * dt;
+
+              // Surface skin projection
+              for (const o of state.obstacles) {
+                const sdf = getObstacleSDF(o, pt.x, pt.y);
+                if (sdf.distance <= 1.2) {
+                  pt.x += sdf.nx * (1.2 - sdf.distance);
+                  pt.y += sdf.ny * (1.2 - sdf.distance);
+                }
+              }
+
+              if (pt.x > state.width + 50) {
+                line.points.splice(i, 1);
+              }
+            }
+
+            if (line.points.length > 180) line.points.length = 180;
+          }
+        }
+      }
+
+      function pressureColorRGBA(p) {
+        const t = clamp((p + 0.9) / 1.8, 0, 1);
+        const stops = [
+          [30, 58, 138],   // Suction (Deep Blue)
+          [2, 132, 199],   // Low (Cyan-Blue)
+          [16, 185, 129],  // Ambient (Green)
+          [234, 179, 8],   // High (Yellow)
+          [239, 68, 68]    // Stagnation (Red)
+        ];
+        const n = (stops.length - 1) * t;
+        const i = Math.min(stops.length - 2, Math.floor(n));
+        const f = n - i;
+        const a = stops[i], b = stops[i + 1];
+        return [
+          Math.round(a[0] + (b[0] - a[0]) * f),
+          Math.round(a[1] + (b[1] - a[1]) * f),
+          Math.round(a[2] + (b[2] - a[2]) * f),
+          Math.round(clamp(Math.abs(p) * 115, 15, 140))
+        ];
+      }
+
+      function vorticityColorRGBA(w) {
+        const t = clamp((w + 2.5) / 5.0, 0, 1);
+        const r = Math.round(255 * t);
+        const b = Math.round(255 * (1 - t));
+        const g = Math.round(120 * (1 - Math.abs(t - 0.5) * 2));
+        return [r, g, b, Math.round(clamp(Math.abs(w) * 125, 20, 160))];
+      }
+
+      function drawGrid() {
+        if (!$("showGrid").checked) return;
+        ctx.strokeStyle = "rgba(120, 160, 185, 0.07)";
+        ctx.lineWidth = 1;
+        const size = 32;
+        for (let x = 0; x < state.width; x += size) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, state.height); ctx.stroke();
+        }
+        for (let y = 0; y < state.height; y += size) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(state.width, y); ctx.stroke();
+        }
+      }
+
+      /**
+       * SMOOTH CONTINUOUS HEATMAP RENDERER (NO TILES / NO BOXES)
+       */
+      function drawSmoothCFDHeatmap() {
+        const isPres = $("showPressure").checked;
+        const isVort = $("showVorticity").checked;
+        if (!isPres && !isVort) return;
+
+        const imgData = offCtx.createImageData(state.offCols, state.offRows);
+        const data = imgData.data;
+
+        for (let i = 0; i < state.fieldP.length; i++) {
+          let rgba = [0, 0, 0, 0];
+          if (isPres) {
+            rgba = pressureColorRGBA(state.fieldP[i]);
+          } else if (isVort) {
+            rgba = vorticityColorRGBA(state.fieldW[i]);
+          }
+
+          const idx = i * 4;
+          data[idx] = rgba[0];
+          data[idx + 1] = rgba[1];
+          data[idx + 2] = rgba[2];
+          data[idx + 3] = rgba[3];
+        }
+
+        offCtx.putImageData(imgData, 0, 0);
+
+        ctx.save();
+        ctx.filter = "blur(12px)";
+        ctx.globalAlpha = 0.85;
+        ctx.drawImage(offCanvas, 0, 0, state.width, state.height);
+        ctx.restore();
+      }
+
+      function drawVectorField() {
+        if (!$("showVectors").checked) return;
+        ctx.lineWidth = 1;
+        const step = 40;
+        for (let y = 20; y < state.height; y += step) {
+          for (let x = 20; x < state.width; x += step) {
+            const flow = evaluateFlow(x, y);
+            const speed = Math.hypot(flow.vx, flow.vy);
+            const scale = 14 / (state.speed || 1);
+            const ex = x + flow.vx * scale;
+            const ey = y + flow.vy * scale;
+
+            const ratio = clamp(speed / (state.speed * 1.5), 0, 1);
+            ctx.strokeStyle = `rgba(${Math.round(55 + ratio * 200)}, ${Math.round(210 - ratio * 100)}, 255, 0.35)`;
+            
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(ex, ey);
+            ctx.stroke();
+
+            const ang = Math.atan2(ey - y, ex - x);
+            ctx.fillStyle = ctx.strokeStyle;
+            ctx.beginPath();
+            ctx.moveTo(ex, ey);
+            ctx.lineTo(ex - 4 * Math.cos(ang - 0.4), ey - 4 * Math.sin(ang - 0.4));
+            ctx.lineTo(ex - 4 * Math.cos(ang + 0.4), ey - 4 * Math.sin(ang + 0.4));
+            ctx.fill();
+          }
+        }
+      }
+
+      function drawParticles() {
+        if (!$("showParticles").checked) return;
+
+        for (const p of state.particles) {
+          const flow = evaluateFlow(p.x, p.y);
+          const spd = Math.hypot(flow.vx, flow.vy);
+          const fastRatio = clamp(spd / (state.speed * 1.4), 0, 1);
+          const alpha = clamp(1 - p.age / p.life, 0.15, 0.95);
+
+          if (p.history.length > 1) {
+            ctx.beginPath();
+            ctx.moveTo(p.history[0].x, p.history[0].y);
+            for (let i = 1; i < p.history.length; i++) {
+              ctx.lineTo(p.history[i].x, p.history[i].y);
+            }
+            ctx.strokeStyle = fastRatio > 0.6 ? "#62f6ff" : "#3b82f6";
+            ctx.globalAlpha = alpha * 0.45;
+            ctx.lineWidth = p.size;
+            ctx.stroke();
+          }
+
+          ctx.globalAlpha = alpha;
+          ctx.fillStyle = fastRatio > 0.5 ? "#62f6ff" : "#3b82f6";
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size * 1.1, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      function drawSmokeLines() {
+        if (!$("showSmoke").checked) return;
+        const pal = smokePalettes[state.smokeColor] || smokePalettes.cyan;
+
+        ctx.lineWidth = 2.5;
+        for (const line of state.smokeLines) {
+          if (line.points.length < 2) continue;
+          ctx.beginPath();
+          ctx.moveTo(line.points[0].x, line.points[0].y);
+          for (let i = 1; i < line.points.length; i++) {
+            ctx.lineTo(line.points[i].x, line.points[i].y);
+          }
+          ctx.strokeStyle = pal.head;
+          ctx.globalAlpha = 0.65;
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+      }
+
+      function drawObstacle(o) {
+        ctx.save();
+        ctx.translate(o.x, o.y);
+        ctx.rotate(o.rotation);
+
+        const isSel = o === state.selected;
+        const isHov = o === state.hovered;
+
+        ctx.fillStyle = "#e6f2f5";
+        ctx.strokeStyle = isSel ? "#ffbd59" : isHov ? "#39c6b4" : "#4b6578";
+        ctx.lineWidth = isSel ? 3.5 : isHov ? 2.5 : 1.8;
+        ctx.shadowColor = "rgba(0, 0, 0, 0.5)";
+        ctx.shadowBlur = 16;
+
+        ctx.beginPath();
+
+        const rx = o.width / 2;
+        const ry = o.height / 2;
+
+        if (o.type === "circle") {
+          ctx.arc(0, 0, rx, 0, Math.PI * 2);
+        } else if (o.type === "ellipse") {
+          ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+        } else if (o.type === "naca4412" || o.type === "naca0012" || o.type === "racewing") {
+          // Draw NACA profile in local coordinates matching getObstacleSDF exactly
+          const profLE = getAirfoilProfile(o, 0);
+          ctx.moveTo(-rx, profLE.yc);
+          
+          // Trace Upper Skin
+          for (let lx = -rx; lx <= rx; lx += 4) {
+            const t = (lx / rx + 1) / 2;
+            const prof = getAirfoilProfile(o, t);
+            ctx.lineTo(lx, prof.yUpper);
+          }
+          // Trace Lower Skin
+          for (let lx = rx; lx >= -rx; lx -= 4) {
+            const t = (lx / rx + 1) / 2;
+            const prof = getAirfoilProfile(o, t);
+            ctx.lineTo(lx, prof.yLower);
+          }
+          ctx.closePath();
+        } else if (o.type === "teardrop") {
+          ctx.moveTo(-rx, 0);
+          ctx.bezierCurveTo(-rx * 0.2, -ry * 1.4, rx * 0.6, -ry * 0.8, rx, 0);
+          ctx.bezierCurveTo(rx * 0.6, ry * 0.8, -rx * 0.2, ry * 1.4, -rx, 0);
+        } else if (o.type === "wedge") {
+          ctx.moveTo(-rx, 0);
+          ctx.lineTo(0, -ry);
+          ctx.lineTo(rx, 0);
+          ctx.lineTo(0, ry);
+          ctx.closePath();
+        } else if (o.type === "car") {
+          ctx.moveTo(-rx, ry * 0.4);
+          ctx.lineTo(-rx * 0.8, -ry * 0.1);
+          ctx.lineTo(-rx * 0.3, -ry * 0.9);
+          ctx.lineTo(rx * 0.3, -ry * 0.9);
+          ctx.lineTo(rx * 0.7, -ry * 0.1);
+          ctx.lineTo(rx, ry * 0.4);
+          ctx.lineTo(rx, ry * 0.8);
+          ctx.lineTo(-rx, ry * 0.8);
+          ctx.closePath();
+        } else {
+          ctx.roundRect(-rx, -ry, o.width, o.height, 4);
+        }
+
+        ctx.fill();
+        ctx.stroke();
+
+        if ($("showChords").checked) {
+          ctx.shadowBlur = 0;
+          ctx.strokeStyle = "rgba(57, 198, 180, 0.55)";
+          ctx.lineWidth = 1;
+          ctx.setLineDash([4, 4]);
+          ctx.beginPath();
+          ctx.moveTo(-rx * 1.1, 0);
+          ctx.lineTo(rx * 1.1, 0);
+          ctx.stroke();
+          ctx.setLineDash([]);
+        }
+
+        if ($("showForces").checked) {
+          ctx.shadowBlur = 0;
+
+          // Lift force vector
+          const liftMag = o.cl * 38;
+          ctx.strokeStyle = "#10b981";
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(0, -liftMag);
+          ctx.stroke();
+
+          // Drag force vector
+          const dragMag = o.cd * 42;
+          ctx.strokeStyle = "#ef4444";
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(dragMag, 0);
+          ctx.stroke();
+        }
+
+        ctx.restore();
+      }
+
+      function render() {
+        ctx.clearRect(0, 0, state.width, state.height);
+        ctx.fillStyle = "#070a0e";
+        ctx.fillRect(0, 0, state.width, state.height);
+
+        drawGrid();
+        drawSmoothCFDHeatmap();
+        drawVectorField();
+        drawParticles();
+        drawSmokeLines();
+
+        state.obstacles.forEach(drawObstacle);
+
+        const reynoldsVal = Math.round((state.density * state.speed * 180) / Math.max(0.01, state.viscosity));
+        const machVal = (state.speed / 3.4).toFixed(2);
+        
+        let totalCL = 0, totalCD = 0;
+        if (state.obstacles.length > 0) {
+          totalCL = state.obstacles.reduce((sum, o) => sum + o.cl, 0) / state.obstacles.length;
+          totalCD = state.obstacles.reduce((sum, o) => sum + o.cd, 0) / state.obstacles.length;
+        }
+
+        const ldRatioVal = totalCD > 0.01 ? (totalCL / totalCD).toFixed(2) : "—";
+        const maxV = (state.speed * 1.4).toFixed(2);
+
+        $("reynolds").textContent = reynoldsVal.toLocaleString();
+        $("mach").textContent = `${machVal} M`;
+        $("liftCoeff").textContent = totalCL.toFixed(2);
+        $("dragCoeff").textContent = totalCD.toFixed(2);
+        $("ldRatio").textContent = ldRatioVal;
+        $("maxVelocity").textContent = `${maxV} m/s`;
+        $("particleCount").textContent = state.particles.length.toLocaleString();
+      }
+
+      function loadScenario(preset) {
+        state.obstacles = [];
+        state.selected = null;
+
+        const w = state.width;
+        const h = state.height;
+
+        if (preset === "stall") {
+          state.speed = 2.2;
+          state.angle = 0;
+          state.obstacles.push(makeObstacle("naca4412", w * 0.42, h * 0.48, 190, 56, 0.34));
+          $("speed").value = 2.2; $("speedOut").textContent = "2.20 m/s";
+          $("angle").value = 0; $("angleOut").textContent = "0°";
+        }
+        else if (preset === "karman") {
+          state.speed = 1.6;
+          state.viscosity = 0.08;
+          state.obstacles.push(makeObstacle("circle", w * 0.35, h * 0.5, 85, 85));
+          $("speed").value = 1.6; $("speedOut").textContent = "1.60 m/s";
+          $("viscosity").value = 0.08; $("viscosityOut").textContent = "0.08";
+        }
+        else if (preset === "venturi") {
+          state.speed = 1.5;
+          state.obstacles.push(makeObstacle("ellipse", w * 0.48, h * 0.18, w * 0.5, 90, 0));
+          state.obstacles.push(makeObstacle("ellipse", w * 0.48, h * 0.82, w * 0.5, 90, 0));
+        }
+        else if (preset === "multielement") {
+          state.speed = 2.0;
+          state.obstacles.push(makeObstacle("naca0012", w * 0.28, h * 0.42, 60, 22, 0.45));
+          state.obstacles.push(makeObstacle("naca4412", w * 0.46, h * 0.48, 170, 52, 0.18));
+          state.obstacles.push(makeObstacle("plate", w * 0.62, h * 0.54, 14, 65, 0.55));
+        }
+        else if (preset === "groundeffect") {
+          state.speed = 2.4;
+          state.obstacles.push(makeObstacle("racewing", w * 0.45, h * 0.74, 180, 56, -0.12));
+          state.obstacles.push(makeObstacle("plate", w * 0.5, h * 0.94, w * 0.95, 14, 0));
+        }
+        else if (preset === "dragcompare") {
+          state.speed = 1.8;
+          state.obstacles.push(makeObstacle("teardrop", w * 0.35, h * 0.25, 140, 50, 0));
+          state.obstacles.push(makeObstacle("circle", w * 0.35, h * 0.50, 65, 65, 0));
+          state.obstacles.push(makeObstacle("plate", w * 0.35, h * 0.75, 16, 80, 0));
+        }
+        else if (preset === "supersonic") {
+          state.speed = 3.8;
+          state.obstacles.push(makeObstacle("wedge", w * 0.45, h * 0.48, 180, 55, 0));
+          $("speed").value = 3.8; $("speedOut").textContent = "3.80 m/s";
+        }
+
+        seedParticles();
+      }
+
+      function pointerPos(e) {
+        const r = canvas.getBoundingClientRect();
+        return { x: e.clientX - r.left, y: e.clientY - r.top };
+      }
+
+      canvas.addEventListener("pointerdown", e => {
+        const p = pointerPos(e);
+        state.selected = state.obstacles.find(o => getObstacleSDF(o, p.x, p.y).distance <= 10);
+        if (state.selected) {
+          state.dragging = true;
+          state.dragOffset.x = p.x - state.selected.x;
+          state.dragOffset.y = p.y - state.selected.y;
+          canvas.setPointerCapture(e.pointerId);
+        }
+      });
+
+      canvas.addEventListener("pointermove", e => {
+        const p = pointerPos(e);
+        state.hovered = state.obstacles.find(o => getObstacleSDF(o, p.x, p.y).distance <= 10);
+
+        if (state.hovered) {
+          tooltip.style.display = "block";
+          tooltip.style.left = `${e.clientX}px`;
+          tooltip.style.top = `${e.clientY}px`;
+          tooltip.innerHTML = `<strong>${state.hovered.type.toUpperCase()}</strong><br>` +
+                              `AoA: ${(state.hovered.rotation * 180 / Math.PI).toFixed(1)}°<br>` +
+                              `C<sub>L</sub>: ${state.hovered.cl.toFixed(2)} | C<sub>D</sub>: ${state.hovered.cd.toFixed(2)}`;
+        } else {
+          tooltip.style.display = "none";
+        }
+
+        if (!state.dragging || !state.selected) return;
+        state.selected.x = clamp(p.x - state.dragOffset.x, 20, state.width - 20);
+        state.selected.y = clamp(p.y - state.dragOffset.y, 20, state.height - 20);
+      });
+
+      canvas.addEventListener("pointerup", () => { state.dragging = false; });
+
+      canvas.addEventListener("wheel", e => {
+        const p = pointerPos(e);
+        const target = state.obstacles.find(o => getObstacleSDF(o, p.x, p.y).distance <= 14);
+        if (!target) return;
+
+        e.preventDefault();
+        if (e.shiftKey) {
+          target.width = clamp(target.width - e.deltaY * 0.1, 30, 300);
+          target.height = clamp(target.height - e.deltaY * 0.05, 15, 180);
+        } else {
+          target.rotation += e.deltaY * 0.003;
+        }
+      }, { passive: false });
+
+      canvas.addEventListener("dblclick", e => {
+        const p = pointerPos(e);
+        state.obstacles.push(makeObstacle($("obstacleType").value, p.x, p.y));
+      });
+
+      function bindRange(id, output, format = v => v, callback) {
+        $(id).addEventListener("input", e => {
+          state[id] = Number(e.target.value);
+          $(output).textContent = format(state[id]);
+          if (callback) callback(state[id]);
+        });
+      }
+
+      bindRange("speed", "speedOut", v => `${v.toFixed(2)} m/s`);
+      bindRange("angle", "angleOut", v => `${v}°`);
+      bindRange("viscosity", "viscosityOut", v => v.toFixed(2));
+      bindRange("density", "densityOut", v => `${v.toFixed(3)} kg/m³`);
+      bindRange("particleDensity", "particleDensityOut", v => v, () => seedParticles());
+      bindRange("trailLength", "trailLengthOut", v => v);
+
+      $("smokeColor").addEventListener("change", e => { state.smokeColor = e.target.value; });
+
+      $("scenarioSelect").addEventListener("change", e => {
+        if (e.target.value !== "custom") loadScenario(e.target.value);
+      });
+
+      $("addObstacle").addEventListener("click", () => {
+        state.obstacles.push(makeObstacle(
+          $("obstacleType").value,
+          state.width * 0.5 + rand(-50, 50),
+          state.height * 0.5 + rand(-50, 50)
+        ));
+      });
+
+      $("clearObstacles").addEventListener("click", () => {
+        state.obstacles = [];
+        state.selected = null;
+      });
+
+      $("reset").addEventListener("click", () => {
+        state.obstacles = [];
+        state.vortices = [];
+        loadScenario("stall");
+        $("scenarioSelect").value = "stall";
+      });
+
+      $("pause").addEventListener("click", e => {
+        state.paused = !state.paused;
+        e.currentTarget.textContent = state.paused ? "Resume" : "Pause";
+      });
+
+      $("showPressure").addEventListener("change", e => {
+        if (e.target.checked) $("showVorticity").checked = false;
+        updateLegendText();
+      });
+
+      $("showVorticity").addEventListener("change", e => {
+        if (e.target.checked) $("showPressure").checked = false;
+        updateLegendText();
+      });
+
+      function updateLegendText() {
+        if ($("showVorticity").checked) {
+          $("legendTitle").textContent = "Vorticity Field (ω)";
+          $("legendBar").style.background = "linear-gradient(90deg, #1e3a8a, #0284c7, #10b981, #eab308, #ef4444)";
+          $("legendLabels").innerHTML = "<span>Clockwise (-)</span><span>Irrotational (0)</span><span>Counter-CW (+)</span>";
+        } else {
+          $("legendTitle").textContent = "Static Pressure (Cp)";
+          $("legendBar").style.background = "linear-gradient(90deg, #1e3a8a, #0284c7, #10b981, #eab308, #ef4444)";
+          $("legendLabels").innerHTML = "<span>Suction (-)</span><span>Ambient (0)</span><span>Stagnation (+)</span>";
+        }
+      }
+
+      window.addEventListener("resize", resize);
+
+      let lastTime = performance.now();
+      function loop(now) {
+        const dt = Math.min(0.04, (now - lastTime) / 1000);
+        lastTime = now;
+        updateParticles(dt);
+        render();
+        requestAnimationFrame(loop);
+      }
+
+      resize();
+      loadScenario("stall");
+      $("scenarioSelect").value = "stall";
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>
